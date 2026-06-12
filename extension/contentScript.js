@@ -5,7 +5,6 @@ console.log("FOCUS Loaded");
 // =====================================
 
 let currentProblemId = null;
-
 let lastActivity = Date.now();
 
 // =====================================
@@ -13,15 +12,11 @@ let lastActivity = Date.now();
 // =====================================
 
 function getProblemId() {
+    const match = window.location.pathname.match(
+        /\/problems\/([^/]+)\//
+    );
 
-    const match =
-        window.location.pathname.match(
-            /\/problems\/([^/]+)\//
-        );
-
-    return match
-        ? match[1]
-        : null;
+    return match ? match[1] : null;
 }
 
 // =====================================
@@ -29,11 +24,9 @@ function getProblemId() {
 // =====================================
 
 function getProblemTitle() {
-
-    const titleElement =
-        document.querySelector(
-            "div.text-title-large a"
-        );
+    const titleElement = document.querySelector(
+        "div.text-title-large a"
+    );
 
     return titleElement
         ? titleElement.innerText.trim()
@@ -45,11 +38,9 @@ function getProblemTitle() {
 // =====================================
 
 function getDifficulty() {
-
-    const difficultyElement =
-        document.querySelector(
-            '[class*="text-difficulty"]'
-        );
+    const difficultyElement = document.querySelector(
+        '[class*="text-difficulty"]'
+    );
 
     return difficultyElement
         ? difficultyElement.innerText.trim()
@@ -61,11 +52,9 @@ function getDifficulty() {
 // =====================================
 
 function getProblemStatement() {
-
-    const statementElement =
-        document.querySelector(
-            '[data-track-load="description_content"]'
-        );
+    const statementElement = document.querySelector(
+        '[data-track-load="description_content"]'
+    );
 
     return statementElement
         ? statementElement.innerText.trim()
@@ -77,123 +66,69 @@ function getProblemStatement() {
 // =====================================
 
 async function createOrLoadSession() {
+    const problemId = getProblemId();
 
-    const problemId =
-        getProblemId();
+    if (!problemId) return;
 
-    if (!problemId) {
-        return;
-    }
+    const result = await chrome.storage.local.get("sessions");
+    const sessions = result.sessions || {};
 
-    const result =
-        await chrome.storage.local.get(
-            "sessions"
-        );
-
-    const sessions =
-        result.sessions || {};
-
-    let session =
-        sessions[problemId];
+    let session = sessions[problemId];
 
     if (!session) {
-
         session = {
-
             problemId,
-
-            title:
-                getProblemTitle(),
-
-            difficulty:
-                getDifficulty(),
-
-            problemStatement:
-                getProblemStatement(),
+            title: getProblemTitle(),
+            difficulty: getDifficulty(),
+            problemStatement: getProblemStatement(),
 
             activeTime: 0,
-
             focusTime: 0,
-
             idleTime: 0,
-
             tabSwitchCount: 0,
-
             submissionCount: 0,
 
-            startTime:
-                new Date().toISOString(),
-
-            lastVisited:
-                new Date().toISOString(),
-
+            startTime: new Date().toISOString(),
+            lastVisited: new Date().toISOString(),
+            createdDate:
+    new Date().toISOString().split("T")[0],
         };
 
-        sessions[problemId] =
-            session;
+        sessions[problemId] = session;
 
-        await chrome.storage.local.set({
-            sessions
-        });
+        await chrome.storage.local.set({ sessions });
 
-        console.log(
-            "New Session Created",
-            session
-        );
-
+        console.log("New Session Created", session);
     } else {
+        session.lastVisited = new Date().toISOString();
 
-        session.lastVisited =
-            new Date().toISOString();
+        sessions[problemId] = session;
 
-        sessions[problemId] =
-            session;
+        await chrome.storage.local.set({ sessions });
 
-        await chrome.storage.local.set({
-            sessions
-        });
-
-        console.log(
-            "Existing Session Loaded",
-            session
-        );
+        console.log("Existing Session Loaded", session);
     }
 }
 
 // =====================================
 // DETECT PROBLEM CHANGE
 // =====================================
+
 let previousProblemId = null;
 
 async function checkProblemChange() {
+    const problemId = getProblemId();
 
-    const problemId =
-        getProblemId();
+    if (!problemId) return;
 
-    if (!problemId) {
-        return;
-    }
-
-    if (
-        previousProblemId !==
-        problemId
-    ) {
-
-        previousProblemId =
-            problemId;
-
-        currentProblemId =
-            problemId;
-
-        lastActivity =
-            Date.now();
+    if (previousProblemId !== problemId) {
+        previousProblemId = problemId;
+        currentProblemId = problemId;
+        lastActivity = Date.now();
 
         await createOrLoadSession();
 
-        console.log(
-            "Loaded:",
-            problemId
-        );
+        console.log("Loaded:", problemId);
     }
 }
 
@@ -202,162 +137,83 @@ async function checkProblemChange() {
 // =====================================
 
 function updateActivity() {
-
-    lastActivity =
-        Date.now();
+    lastActivity = Date.now();
 }
 
-document.addEventListener(
-    "mousemove",
-    updateActivity
-);
-
-document.addEventListener(
-    "keydown",
-    updateActivity
-);
-
-document.addEventListener(
-    "click",
-    updateActivity
-);
-
-document.addEventListener(
-    "scroll",
-    updateActivity
-);
+document.addEventListener("mousemove", updateActivity);
+document.addEventListener("keydown", updateActivity);
+document.addEventListener("click", updateActivity);
+document.addEventListener("scroll", updateActivity);
 
 // =====================================
 // UPDATE SESSION TIMERS
 // =====================================
 
 async function updateSessionTimers() {
+    if (!currentProblemId) return;
 
-    if (!currentProblemId) {
-        return;
-    }
+    const result = await chrome.storage.local.get("sessions");
+    const sessions = result.sessions || {};
 
-    const result =
-        await chrome.storage.local.get(
-            "sessions"
-        );
+    const session = sessions[currentProblemId];
+    if (!session) return;
 
-    const sessions =
-        result.sessions || {};
-
-    const session =
-        sessions[currentProblemId];
-
-    if (!session) {
-        return;
-    }
-
-    const now =
-        Date.now();
-
-    const pageVisible =
-        document.visibilityState ===
-        "visible";
+    const now = Date.now();
+    const pageVisible = document.visibilityState === "visible";
 
     if (!pageVisible) {
-
         session.idleTime++;
-
-    }
-
-    else if (
-        now - lastActivity < 5000
-    ) {
-
+    } else if (now - lastActivity < 5000) {
         session.activeTime++;
-
-    }
-
-    else {
-
+    } else {
         session.focusTime++;
     }
 
-    sessions[currentProblemId] =
-        session;
+    sessions[currentProblemId] = session;
 
-    await chrome.storage.local.set({
-        sessions
-    });
+    await chrome.storage.local.set({ sessions });
 }
 
 // =====================================
 // TAB SWITCH TRACKING
 // =====================================
 
-document.addEventListener(
-    "visibilitychange",
-    async () => {
+document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "hidden") {
+        console.log("Tab Switched - Problem Hidden");
 
-        if (
-            document.visibilityState ===
-            "hidden"
-        ) {
+        if (!currentProblemId) return;
 
-            console.log("Tab Switched - Problem Hidden");
+        const result = await chrome.storage.local.get("sessions");
+        const sessions = result.sessions || {};
 
-            if (!currentProblemId) {
-                return;
-            }
+        const session = sessions[currentProblemId];
+        if (!session) return;
 
-            const result =
-                await chrome.storage.local.get(
-                    "sessions"
-                );
+        session.tabSwitchCount++;
 
-            const sessions =
-                result.sessions || {};
+        sessions[currentProblemId] = session;
 
-            const session =
-                sessions[currentProblemId];
-
-            if (!session) {
-                return;
-            }
-
-            session.tabSwitchCount++;
-
-            sessions[currentProblemId] =
-                session;
-
-            await chrome.storage.local.set({
-                sessions
-            });
-        }
+        await chrome.storage.local.set({ sessions });
     }
-);
+});
 
 // =====================================
 // INITIALIZATION
 // =====================================
 
-setTimeout(() => {
-
-    checkProblemChange();
-
-}, 3000);
+setTimeout(checkProblemChange, 3000);
 
 // =====================================
-// CHECK URL CHANGES
+// URL CHECK LOOP
 // =====================================
 
-setInterval(() => {
-
-    checkProblemChange();
-
-}, 1000);
+setInterval(checkProblemChange, 1000);
 
 // =====================================
-// UPDATE TIMERS
+// TIMER LOOP
 // =====================================
 
-setInterval(() => {
+setInterval(updateSessionTimers, 1000);
 
-    updateSessionTimers();
 
-}, 1000);
