@@ -3,18 +3,22 @@
   "name": "FOCUS",
   "version": "1.0",
   "description": "DSA Smart Study Tracker",
+
   "permissions": [
     "storage",
     "tabs",
     "activeTab",
     "idle"
   ],
+
   "host_permissions": [
     "https://leetcode.com/*"
   ],
+
   "background": {
     "service_worker": "background.js"
   },
+
   "content_scripts": [
     {
       "matches": [
@@ -25,7 +29,9 @@
       ]
     }
   ],
+
   "action": {
-    "default_title": "FOCUS"
+    "default_title": "FOCUS",
+    "default_popup": "popup/popup.html"
   }
 }

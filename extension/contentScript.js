@@ -331,6 +331,66 @@ document.addEventListener(
         }
     }
 );
+// =====================================
+// SUBMISSION TRACKING
+// =====================================
+
+// =====================================
+// SUBMISSION TRACKING (FIXED)
+// =====================================
+
+document.addEventListener("click", async (event) => {
+
+    // Find closest clickable button
+    const button = event.target.closest("button");
+
+    if (!button) return;
+
+    const text =
+        (button.innerText || "").toLowerCase();
+
+    const ariaLabel =
+        (button.getAttribute("aria-label") || "").toLowerCase();
+
+    const dataTestId =
+        (button.getAttribute("data-testid") || "").toLowerCase();
+
+    // Strong detection (covers most coding platforms)
+    const isSubmit =
+        text.includes("submit") ||
+        ariaLabel.includes("submit") ||
+        dataTestId.includes("submit");
+
+    if (!isSubmit) return;
+
+    if (!currentProblemId) {
+        console.log("No active problem session");
+        return;
+    }
+
+    const result =
+        await chrome.storage.local.get("sessions");
+
+    const sessions =
+        result.sessions || {};
+
+    const session =
+        sessions[currentProblemId];
+
+    if (!session) {
+        console.log("Session not found for submission");
+        return;
+    }
+
+    session.submissionCount =
+        (session.submissionCount || 0) + 1;
+
+    sessions[currentProblemId] = session;
+
+    await chrome.storage.local.set({ sessions });
+
+    console.log("✅ Submission Updated:", session.submissionCount);
+});
 
 // =====================================
 // INITIALIZATION
