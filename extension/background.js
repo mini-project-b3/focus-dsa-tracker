@@ -1,21 +1,36 @@
 console.log("Background Service Worker Running");
 
-let tabSwitchCount = 0;
-
 chrome.runtime.onInstalled.addListener(() => {
     console.log("FOCUS Installed");
+    chrome.alarms.create("analyticsUpdate", {
+        periodInMinutes: 30
+    });
+    console.log("30-minute analytics alarm created");
 });
 
-chrome.tabs.onActivated.addListener(() => {
+// Load analytics files
+importScripts(
+    "src/analytics/productivity.js",
+    "src/analytics/burnout.js",
+    "src/analytics/confidence.js",
+    "src/analytics/dailyAnalyticsEngine.js"
+);
 
-    tabSwitchCount++;
+// Trigger daily analytics from popup or custom messages
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === "RUN_DAILY_ANALYTICS") {
+        console.log("RUN_DAILY_ANALYTICS message received");
+        runDailyAnalytics();
+        if (sendResponse) {
+            sendResponse({ status: "ok" });
+        }
+    }
+});
 
-    chrome.storage.local.set({
-        tabSwitchCount
-    });
-
-    console.log(
-        "Tab Switches:",
-        tabSwitchCount
-    );
+// Trigger daily analytics on alarm
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === "analyticsUpdate") {
+        console.log("Running scheduled daily analytics...");
+        runDailyAnalytics();
+    }
 });
