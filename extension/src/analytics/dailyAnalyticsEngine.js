@@ -7,7 +7,7 @@ function runDailyAnalytics() {
     chrome.storage.local.get(["sessions"], (data) => {
 
         const today =
-            new Date().toISOString().split("T")[0];
+            new Date().toLocaleDateString('en-CA');
 
         const sessions =
             Object.values(data.sessions || {})
