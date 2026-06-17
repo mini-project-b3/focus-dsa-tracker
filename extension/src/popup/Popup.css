@@ -1,0 +1,38 @@
+.popup {
+  width: 350px;
+  min-height: 500px;
+  background: #111111;
+  color: white;
+  padding: 20px;
+}
+
+.popup h2 {
+  color: #f85a0e;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.popup-card {
+  background: #1a1a1a;
+  border: 1px solid rgba(248, 90, 14, 0.2);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.popup-card h4 {
+  color: #f85a0e;
+  margin-bottom: 8px;
+}
+
+.dashboard-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #f85a0e;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
